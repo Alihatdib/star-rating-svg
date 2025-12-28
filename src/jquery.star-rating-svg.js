@@ -1,6 +1,6 @@
 /*
  *  jQuery StarRatingSvg v1.2.0
- *
+ *  ИСПРАВЛЕННЫЙ СКРИПТ
  *  http://github.com/nashio/star-rating-svg
  *  Author: Ignacio Chavez
  *  hello@ignaciochavez.com
@@ -106,7 +106,7 @@
       }
     },
 
-    applyRating: function(rating){
+    applyRating: function(rating, $el){
       var index = rating - 1;
       // paint selected and remove hovered color
       this.paintStars(index, 'rated');
@@ -153,6 +153,7 @@
       this.paintStars(this._state.rating - 1, 'active');
     },
 
+    // ИСПРАВЛЕННЫЙ МЕТОД paintStars
     paintStars: function(endIndex, stateClass){
       var $polygonLeft;
       var $polygonRight;
@@ -168,29 +169,75 @@
         // has another half rating, add half star
         leftClass = ( index - endIndex === 0.5 ) ? stateClass : leftClass;
 
+        // --- ИСПРАВЛЕНИЕ ---
+        // Всегда устанавливаем классы
         $polygonLeft.attr('class', 'svg-'  + leftClass + '-' + this._uid);
         $polygonRight.attr('class', 'svg-'  + rightClass + '-' + this._uid);
 
-        // get color for level
-        var ratedColorsIndex = endIndex >= 0 ? Math.ceil(endIndex) : 0;
+        // Логика для определения цвета в зависимости от состояния и индекса
+        var leftColor, rightColor;
 
-        var ratedColor;
-        if (s.ratedColors && s.ratedColors.length && s.ratedColors[ratedColorsIndex]) {
-          ratedColor = s.ratedColors[ratedColorsIndex];
+        // Цвет для левой половины
+        if (index <= endIndex) {
+          // Звезда активна (или наведена, или оценена)
+          if (stateClass === 'rated' && s.ratedColors && s.ratedColors.length && s.ratedColors[Math.ceil(endIndex)]) {
+            // Используем цвет из ratedColors для оценённого состояния
+            leftColor = s.ratedColors[Math.ceil(endIndex)];
+          } else if (stateClass === 'rated') {
+            // Резервный цвет ratedColor
+            leftColor = s.ratedColor;
+          } else if (stateClass === 'active') {
+            // Цвет активной звезды
+            leftColor = s.useGradient ? s.starGradient.start : s.activeColor;
+          } else if (stateClass === 'hovered') {
+            // Цвет наведения
+            leftColor = s.hoverColor;
+          } else {
+            // Никогда не должно сюда попасть, но на всякий случай
+            leftColor = s.emptyColor;
+          }
         } else {
-          ratedColor = this._defaults.ratedColor;
+          // Звезда неактивна (empty)
+          leftColor = s.emptyColor;
         }
 
-        // only override colors in rated stars and when rated number is valid
-        if (stateClass === 'rated' && endIndex > -1) {
-          // limit to painting only to rated stars, and specific case for half star
-          if (index <= Math.ceil(endIndex) || (index < 1 && endIndex < 0)) {
-            $polygonLeft.attr('style', 'fill:'+ratedColor);
+        // Цвет для правой половины
+        if (index < endIndex) {
+          // Полностью активная звезда
+          if (stateClass === 'rated' && s.ratedColors && s.ratedColors.length && s.ratedColors[Math.ceil(endIndex)]) {
+             rightColor = s.ratedColors[Math.ceil(endIndex)];
+          } else if (stateClass === 'rated') {
+            rightColor = s.ratedColor;
+          } else if (stateClass === 'active') {
+            rightColor = s.useGradient ? s.starGradient.start : s.activeColor;
+          } else if (stateClass === 'hovered') {
+            rightColor = s.hoverColor;
+          } else {
+            rightColor = s.emptyColor;
           }
-          if (index <= endIndex) {
-            $polygonRight.attr('style', 'fill:'+ratedColor);
+        } else if (index === endIndex) {
+          // Половина звезды активна (или наведена, или оценена)
+          if (stateClass === 'rated' && s.ratedColors && s.ratedColors.length && s.ratedColors[Math.ceil(endIndex)]) {
+             rightColor = s.ratedColors[Math.ceil(endIndex)];
+          } else if (stateClass === 'rated') {
+            rightColor = s.ratedColor;
+          } else if (stateClass === 'active') {
+            rightColor = s.useGradient ? s.starGradient.start : s.activeColor;
+          } else if (stateClass === 'hovered') {
+            rightColor = s.hoverColor;
+          } else {
+            rightColor = s.emptyColor;
           }
+        } else {
+          // Звезда неактивна (empty)
+          rightColor = s.emptyColor;
         }
+
+        // Устанавливаем цвета напрямую через стиль
+        $polygonLeft.attr('style', 'fill:'+leftColor);
+        $polygonRight.attr('style', 'fill:'+rightColor);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
       }.bind(this));
     },
 
@@ -271,7 +318,7 @@
       if( round ){
         rating = Math.round(rating);
       }
-      $plugin.applyRating(rating);
+      $plugin.applyRating(rating); // Вызов applyRating обновляет состояние и вызывает paintStars
     },
 
     getRating: function() {
@@ -339,5 +386,3 @@
   };
 
 })( jQuery, window, document );
-
-
